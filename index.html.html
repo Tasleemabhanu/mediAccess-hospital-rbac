@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MediAccess — Hospital Management</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap');
+  :root {
+    --primary: #0f4c75; --primary-light: #1b6ca8; --primary-pale: #e8f4fd;
+    --accent: #00b4d8; --danger: #e63946; --success: #2dc653; --warning: #f4a261;
+    --bg: #f0f4f8; --surface: #ffffff; --surface2: #f7f9fc;
+    --border: #dde3ec; --text: #1a2332; --text-muted: #6b7a90;
+    --sidebar-w: 240px; --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* AUTH */
+  #auth-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0f4c75 0%, #1b6ca8 50%, #00b4d8 100%);
+  }
+  .auth-card {
+    background: white; border-radius: 20px; padding: 48px 40px; width: 420px;
+    box-shadow: 0 32px 80px rgba(15,76,117,0.3);
+  }
+  .auth-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+  .auth-logo-icon {
+    width: 44px; height: 44px; background: var(--primary); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+  }
+  .auth-logo h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; color: var(--primary); }
+  .auth-logo span { font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px; }
+  .auth-title { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 300; margin-bottom: 6px; }
+  .auth-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text);
+    background: var(--surface2); outline: none; -webkit-appearance: none; appearance: none;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--primary-light); background: white; }
+  .btn-login {
+    width: 100%; padding: 13px; background: var(--primary); color: white; border: none;
+    border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+    cursor: pointer; margin-top: 8px; transition: background 0.2s;
+  }
+  .btn-login:hover { background: var(--primary-light); }
+  .demo-hint {
+    margin-top: 20px; padding: 12px; background: var(--primary-pale); border-radius: 8px;
+    font-size: 12px; color: var(--primary); text-align: center; line-height: 1.7;
+  }
+  .error-msg { color: var(--danger); font-size: 12px; margin-top: 10px; text-align: center; min-height: 18px; }
+
+  /* APP LAYOUT */
+  #app-screen { display: none; min-height: 100vh; }
+  .sidebar {
+    width: var(--sidebar-w); background: var(--primary); min-height: 100vh;
+    position: fixed; top: 0; left: 0; display: flex; flex-direction: column; z-index: 100;
+  }
+  .sidebar-logo { padding: 24px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-logo h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; color: white; }
+  .sidebar-logo p { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+  .sidebar-role-badge {
+    margin: 14px 20px; padding: 6px 10px; background: rgba(255,255,255,0.12);
+    border-radius: 6px; font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.9);
+    text-transform: uppercase; letter-spacing: 0.8px; text-align: center;
+  }
+  .nav-section-title {
+    padding: 12px 20px 5px; font-size: 10px; font-weight: 500;
+    color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 1px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+    cursor: pointer; font-size: 13.5px; color: rgba(255,255,255,0.7);
+    border-left: 3px solid transparent; transition: background 0.15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+  .nav-item.active { background: rgba(255,255,255,0.13); color: white; border-left-color: var(--accent); font-weight: 500; }
+  .nav-icon { font-size: 14px; width: 18px; text-align: center; }
+  .sidebar-footer { margin-top: auto; padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .user-avatar {
+    width: 34px; height: 34px; border-radius: 50%; background: var(--accent);
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: white; flex-shrink: 0;
+  }
+  .user-name { font-size: 13px; color: white; font-weight: 500; }
+  .user-email { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .btn-logout {
+    width: 100%; padding: 8px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
+    border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,0.18); color: white; }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar-w); padding: 28px 32px; min-height: 100vh; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border);
+  }
+  .tenant-pill {
+    display: flex; align-items: center; gap: 6px; background: var(--primary-pale);
+    padding: 5px 14px; border-radius: 20px; font-size: 12px; color: var(--primary); font-weight: 500;
+  }
+  .page-header { margin-bottom: 24px; }
+  .page-header h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 300; letter-spacing: -0.5px; }
+  .page-header p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); }
+  .stat-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 30px; font-weight: 600; letter-spacing: -1px; line-height: 1; }
+  .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .c-blue { color: var(--primary); } .c-green { color: var(--success); }
+  .c-amber { color: var(--warning); } .c-red { color: var(--danger); }
+
+  /* CARD */
+  .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+  .card-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title { font-size: 14px; font-weight: 500; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    padding: 10px 20px; text-align: left; font-size: 11px; font-weight: 500;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+  }
+  td { padding: 12px 20px; font-size: 13px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-superadmin { background: #ede9fe; color: #4c1d95; }
+  .badge-admin { background: #ede9fe; color: #4c1d95; }
+  .badge-doctor { background: #d1fae5; color: #065f46; }
+  .badge-nurse { background: #fef3c7; color: #92400e; }
+  .badge-receptionist { background: #fce7f3; color: #9d174d; }
+  .badge-active, .badge-stable, .badge-confirmed { background: #d1fae5; color: #065f46; }
+  .badge-critical { background: #fee2e2; color: #991b1b; }
+  .badge-admitted { background: #dbeafe; color: #1e40af; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 7px 14px; border-radius: 6px; font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-outline { background: transparent; border-color: var(--border); color: var(--text); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-success { background: var(--success); color: white; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 20px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .field label { display: block; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 5px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 7px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text);
+    background: var(--surface2); outline: none; -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--primary-light); background: white; }
+
+  /* MISC */
+  .unauthorized { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 12px; }
+  .vital-chip { padding: 3px 9px; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; font-size: 11px; color: var(--text-muted); }
+  .vital-chip strong { color: var(--text); }
+  .vitals-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🏥</div>
+      <div><h1>MediAccess</h1><span>Hospital Management System</span></div>
+    </div>
+    <h2 class="auth-title">Welcome back</h2>
+    <p class="auth-sub">Sign in to continue</p>
+    <div class="form-group"><label>Email</label><input type="email" id="login-email" value="admin@cityhospital.com" /></div>
+    <div class="form-group"><label>Password</label><input type="password" id="login-password" value="password" /></div>
+    <div class="form-group">
+      <label>Role (demo)</label>
+      <select id="login-role">
+        <option value="SuperAdmin">Super Admin</option>
+        <option value="Doctor">Doctor</option>
+        <option value="Nurse">Nurse</option>
+        <option value="Receptionist">Receptionist</option>
+      </select>
+    </div>
+    <button class="btn-login" onclick="doLogin()">Sign in</button>
+    <div class="error-msg" id="login-error"></div>
+    <div class="demo-hint">
+      <strong>Demo mode</strong> — pick any role and sign in<br>
+      Set <code>API_BASE</code> in the script to connect your .NET backend
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <nav class="sidebar">
+    <div class="sidebar-logo"><h2>🏥 MediAccess</h2><p>City General Hospital</p></div>
+    <div class="sidebar-role-badge" id="role-badge">Role</div>
+    <div id="nav-links"></div>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar">U</div>
+        <div><div class="user-name" id="user-name">User</div><div class="user-email" id="user-email">—</div></div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+  </nav>
+  <main class="main">
+    <div class="topbar">
+      <div id="page-breadcrumb" style="font-size:13px;color:var(--text-muted)">Dashboard</div>
+      <div class="tenant-pill">🏢 City General — Branch A</div>
+    </div>
+    <div id="page-content"></div>
+  </main>
+</div>
+
+<script>
+const API_BASE = 'https://your-backend.onrender.com/api';
+
+let currentUser = null;
+
+const ROLE_NAV = {
+  SuperAdmin: [
+    { title: 'Overview', items: [{ id:'dashboard', label:'Dashboard', icon:'📊' }] },
+    { title: 'Administration', items: [
+      { id:'manage-users', label:'Manage Users', icon:'👥' },
+      { id:'manage-roles', label:'Manage Roles', icon:'🔐' },
+      { id:'manage-tenants', label:'Manage Tenants', icon:'🏢' },
+    ]},
+    { title: 'Hospital', items: [
+      { id:'all-patients', label:'All Patients', icon:'🧑‍⚕️' },
+      { id:'audit-logs', label:'Audit Logs', icon:'📋' },
+    ]}
+  ],
+  Doctor: [
+    { title: 'Overview', items: [{ id:'dashboard', label:'Dashboard', icon:'📊' }] },
+    { title: 'Clinical', items: [
+      { id:'my-patients', label:'My Patients', icon:'🧑‍⚕️' },
+      { id:'prescriptions', label:'Prescriptions', icon:'💊' },
+      { id:'reports', label:'Lab Reports', icon:'🔬' },
+    ]}
+  ],
+  Nurse: [
+    { title: 'Overview', items: [{ id:'dashboard', label:'Dashboard', icon:'📊' }] },
+    { title: 'Ward', items: [
+      { id:'assigned-patients', label:'Assigned Patients', icon:'🛏️' },
+      { id:'update-vitals', label:'Update Vitals', icon:'📈' },
+    ]}
+  ],
+  Receptionist: [
+    { title: 'Overview', items: [{ id:'dashboard', label:'Dashboard', icon:'📊' }] },
+    { title: 'Front Desk', items: [
+      { id:'register-patient', label:'Register Patient', icon:'📝' },
+      { id:'appointments', label:'Appointments', icon:'📅' },
+    ]}
+  ]
+};
+
+const PATIENTS = [
+  { id:'P001', name:'Rajesh Kumar', age:45, ward:'Cardiology', doctor:'Dr. Priya Sharma', status:'stable', admitted:'2026-04-15' },
+  { id:'P002', name:'Ananya Reddy', age:32, ward:'Maternity', doctor:'Dr. Arjun Nair', status:'stable', admitted:'2026-04-18' },
+  { id:'P003', name:'Mohammed Faiz', age:67, ward:'ICU', doctor:'Dr. Priya Sharma', status:'critical', admitted:'2026-04-19' },
+  { id:'P004', name:'Sunita Patel', age:55, ward:'Ortho', doctor:'Dr. Kiran Rao', status:'admitted', admitted:'2026-04-17' },
+  { id:'P005', name:'Vikram Singh', age:28, ward:'General', doctor:'Dr. Arjun Nair', status:'stable', admitted:'2026-04-20' },
+];
+
+const USERS = [
+  { id:1, name:'Dr. Priya Sharma', email:'priya@cityhospital.com', role:'Doctor', tenant:'Branch A', status:'active' },
+  { id:2, name:'Nurse Kavitha', email:'kavitha@cityhospital.com', role:'Nurse', tenant:'Branch A', status:'active' },
+  { id:3, name:'Ravi (Reception)', email:'ravi@cityhospital.com', role:'Receptionist', tenant:'Branch B', status:'active' },
+  { id:4, name:'Dr. Arjun Nair', email:'arjun@cityhospital.com', role:'Doctor', tenant:'Branch A', status:'active' },
+  { id:5, name:'Dr. Kiran Rao', email:'kiran@cityhospital.com', role:'Doctor', tenant:'Branch B', status:'active' },
+];
+
+const TENANTS = [
+  { id:1, name:'City General — Branch A', users:24, patients:312, status:'active' },
+  { id:2, name:'City General — Branch B', users:18, patients:205, status:'active' },
+  { id:3, name:'City General — Branch C', users:12, patients:98, status:'active' },
+];
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const role = document.getElementById('login-role').value;
+  const err = document.getElementById('login-error');
+  err.textContent = '';
+  if (!email || !password) { err.textContent = 'Please fill all fields.'; return; }
+
+  /* ── Real API (uncomment when backend is live) ──
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password })
+    });
+    if (!res.ok) { err.textContent = 'Invalid credentials.'; return; }
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
+    const payload = parseJwt(data.token);
+    currentUser = {
+      name: payload.name || email.split('@')[0], email,
+      role: payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload.role,
+      tenantId: payload.TenantId
+    };
+  } catch(e) { err.textContent = 'Cannot connect to server.'; return; }
+  */
+
+  // Demo mode
+  const names = { SuperAdmin:'Admin User', Doctor:'Dr. Priya Sharma', Nurse:'Nurse Kavitha', Receptionist:'Ravi Kumar' };
+  currentUser = { name: names[role], email, role, tenantId: 'branch-a' };
+  localStorage.setItem('demoUser', JSON.stringify(currentUser));
+  launchApp();
+}
+
+function parseJwt(token) {
+  try { return JSON.parse(atob(token.split('.')[1])); } catch { return {}; }
+}
+
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('token');
+  localStorage.removeItem('demoUser');
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+}
+
+function launchApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('role-badge').textContent = currentUser.role;
+  document.getElementById('user-name').textContent = currentUser.name;
+  document.getElementById('user-email').textContent = currentUser.email;
+  document.getElementById('user-avatar').textContent = currentUser.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  buildNav();
+  navigateTo('dashboard');
+}
+
+function buildNav() {
+  const c = document.getElementById('nav-links');
+  c.innerHTML = '';
+  (ROLE_NAV[currentUser.role] || []).forEach(section => {
+    const t = document.createElement('div');
+    t.className = 'nav-section-title';
+    t.textContent = section.title;
+    c.appendChild(t);
+    section.items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'nav-item';
+      el.id = 'nav-' + item.id;
+      el.innerHTML = `<span class="nav-icon">${item.icon}</span>${item.label}`;
+      el.onclick = () => navigateTo(item.id);
+      c.appendChild(el);
+    });
+  });
+}
+
+function navigateTo(pageId) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + pageId);
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('page-breadcrumb').textContent = navEl ? navEl.textContent.trim() : pageId;
+  renderPage(pageId);
+}
+
+const ALLOWED = {
+  SuperAdmin: ['dashboard','manage-users','manage-roles','manage-tenants','all-patients','audit-logs'],
+  Doctor:     ['dashboard','my-patients','prescriptions','reports'],
+  Nurse:      ['dashboard','assigned-patients','update-vitals'],
+  Receptionist: ['dashboard','register-patient','appointments'],
+};
+
+function renderPage(pageId) {
+  const el = document.getElementById('page-content');
+  if (!ALLOWED[currentUser.role]?.includes(pageId)) {
+    el.innerHTML = `<div class="unauthorized"><div style="font-size:48px">🔒</div><h3 style="font-size:20px;font-weight:500">Access denied</h3><p style="color:var(--text-muted)">You don't have permission to view this page.</p></div>`;
+    return;
+  }
+  const pages = { dashboard, 'manage-users':manageUsers, 'manage-roles':manageRoles,
+    'manage-tenants':manageTenants, 'all-patients':allPatients, 'audit-logs':auditLogs,
+    'my-patients':myPatients, prescriptions, reports,
+    'assigned-patients':assignedPatients, 'update-vitals':updateVitals,
+    'register-patient':registerPatient, appointments };
+  el.innerHTML = (pages[pageId] || (() => '<p>Not found</p>'))();
+}
+
+function patientRows(list) {
+  return list.map(p => `<tr>
+    <td><strong>${p.id}</strong></td><td>${p.name}</td><td>${p.age}</td>
+    <td>${p.ward}</td><td>${p.doctor}</td>
+    <td><span class="badge badge-${p.status}">${p.status}</span></td><td>${p.admitted}</td>
+  </tr>`).join('');
+}
+
+function patientTable(list) {
+  return `<table><thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Ward</th><th>Doctor</th><th>Status</th><th>Admitted</th></tr></thead><tbody>${patientRows(list)}</tbody></table>`;
+}
+
+function dashboard() {
+  const stats = {
+    SuperAdmin: [['Total patients','615','Across all branches','c-blue'],['Active staff','54','Logged in today','c-green'],['Tenants','3','Hospital branches',''],['Critical cases','7','Require attention','c-red']],
+    Doctor: [['My patients','12','Currently admitted','c-blue'],['Consultations today','5','Completed','c-green'],['Pending reports','3','Awaiting review','c-amber'],['Prescriptions','28','This week','']],
+    Nurse: [['Assigned patients','8','Ward B','c-blue'],['Vitals updated','6','Today','c-green'],['Pending vitals','2','Due soon','c-amber']],
+    Receptionist: [['Registrations today','14','New patients','c-blue'],['Appointments','22','Scheduled today','c-green'],['Walk-ins','8','No appointment','']],
+  };
+  const sCards = (stats[currentUser.role]||[]).map(([label,val,sub,cls]) =>
+    `<div class="stat-card"><div class="stat-label">${label}</div><div class="stat-value ${cls}">${val}</div><div class="stat-sub">${sub}</div></div>`
+  ).join('');
+  const first = currentUser.name.split(' ')[0];
+  return `<div class="page-header"><h2>Good morning, ${first} 👋</h2><p>Your overview for today, April 20 2026</p></div>
+    <div class="stats-grid">${sCards}</div>
+    <div class="card"><div class="card-header"><span class="card-title">Recent patients</span></div>${patientTable(PATIENTS.slice(0,4))}</div>`;
+}
+
+function manageUsers() {
+  const rows = USERS.map(u => `<tr>
+    <td>${u.id}</td><td><strong>${u.name}</strong></td><td>${u.email}</td>
+    <td><span class="badge badge-${u.role.toLowerCase()}">${u.role}</span></td>
+    <td>${u.tenant}</td><td><span class="badge badge-active">${u.status}</span></td>
+    <td><button class="btn btn-outline" style="margin-right:6px">Edit</button><button class="btn btn-danger">Remove</button></td>
+  </tr>`).join('');
+  return `<div class="page-header"><h2>Manage Users</h2><p>All staff across tenants</p></div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Staff list (${USERS.length})</span><button class="btn btn-primary">+ Add user</button></div>
+      <table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Tenant</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+}
+
+function manageRoles() {
+  const roles = [
+    { name:'SuperAdmin', desc:'Full system access — manages all tenants, users, and settings.', users:2, perms:['All permissions'] },
+    { name:'Doctor', desc:'Clinical access — view patients, write prescriptions, view reports.', users:15, perms:['view:patients','write:prescriptions','view:reports'] },
+    { name:'Nurse', desc:'Ward access — assigned patients and vital sign updates.', users:22, perms:['view:assigned-patients','write:vitals'] },
+    { name:'Receptionist', desc:'Front desk — patient registration and appointment booking.', users:10, perms:['write:patients','write:appointments'] },
+  ];
+  return `<div class="page-header"><h2>Manage Roles</h2><p>Role definitions and permissions</p></div>` +
+    roles.map(r => `<div class="card">
+      <div class="card-header"><span class="card-title"><span class="badge badge-${r.name.toLowerCase()}">${r.name}</span></span><span style="font-size:12px;color:var(--text-muted)">${r.users} users</span></div>
+      <div style="padding:14px 20px">
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">${r.desc}</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${r.perms.map(p=>`<span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--text-muted)">${p}</span>`).join('')}</div>
+      </div>
+    </div>`).join('');
+}
+
+function manageTenants() {
+  const rows = TENANTS.map(t => `<tr>
+    <td>${t.id}</td><td><strong>${t.name}</strong></td><td>${t.users}</td><td>${t.patients}</td>
+    <td><span class="badge badge-active">${t.status}</span></td>
+    <td><button class="btn btn-outline">Manage</button></td>
+  </tr>`).join('');
+  return `<div class="page-header"><h2>Manage Tenants</h2><p>Hospital branches and organizations</p></div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Tenant list</span><button class="btn btn-primary">+ Add tenant</button></div>
+      <table><thead><tr><th>ID</th><th>Name</th><th>Staff</th><th>Patients</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+}
+
+function allPatients() {
+  return `<div class="page-header"><h2>All Patients</h2><p>All admissions in Branch A</p></div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Patient records (${PATIENTS.length})</span><button class="btn btn-primary">+ New patient</button></div>
+      ${patientTable(PATIENTS)}
+    </div>`;
+}
+
+function auditLogs() {
+  const logs = [
+    { time:'09:14', user:'Dr. Priya', action:'Viewed patient P003', ip:'10.0.1.4' },
+    { time:'09:02', user:'Nurse Kavitha', action:'Updated vitals for P001', ip:'10.0.1.8' },
+    { time:'08:55', user:'Ravi Kumar', action:'Registered patient P005', ip:'10.0.1.12' },
+    { time:'08:43', user:'Dr. Arjun', action:'Added prescription for P002', ip:'10.0.1.5' },
+    { time:'08:30', user:'Admin', action:'Added new user: Dr. Kiran Rao', ip:'10.0.0.1' },
+  ];
+  const rows = logs.map(l => `<tr><td>${l.time}</td><td>${l.user}</td><td>${l.action}</td><td style="color:var(--text-muted)">${l.ip}</td></tr>`).join('');
+  return `<div class="page-header"><h2>Audit Logs</h2><p>System activity for today</p></div>
+    <div class="card"><table><thead><tr><th>Time</th><th>User</th><th>Action</th><th>IP</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function myPatients() {
+  const mine = PATIENTS.filter(p => p.doctor === 'Dr. Priya Sharma');
+  return `<div class="page-header"><h2>My Patients</h2><p>Currently under your care</p></div>
+    <div class="card">${patientTable(mine)}</div>`;
+}
+
+function prescriptions() {
+  const rxs = [
+    { id:'RX001', patient:'Rajesh Kumar', drug:'Atorvastatin 40mg', dosage:'1 tablet daily', days:30 },
+    { id:'RX002', patient:'Mohammed Faiz', drug:'Losartan 50mg + Amlodipine 5mg', dosage:'1 each morning', days:14 },
+  ];
+  const rows = rxs.map(r => `<tr><td>${r.id}</td><td>${r.patient}</td><td>${r.drug}</td><td>${r.dosage}</td><td>${r.days} days</td></tr>`).join('');
+  return `<div class="page-header"><h2>Prescriptions</h2><p>Your active prescriptions</p></div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Active prescriptions</span><button class="btn btn-primary">+ New prescription</button></div>
+      <table><thead><tr><th>Rx ID</th><th>Patient</th><th>Medication</th><th>Dosage</th><th>Duration</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+}
+
+function reports() {
+  return `<div class="page-header"><h2>Lab Reports</h2><p>Pending and completed</p></div>
+    <div class="card"><div style="padding:48px;text-align:center;color:var(--text-muted)">
+      <div style="font-size:40px;margin-bottom:12px">🔬</div>
+      <p>3 lab reports pending your review</p>
+      <button class="btn btn-primary" style="margin-top:16px">View reports</button>
+    </div></div>`;
+}
+
+function assignedPatients() {
+  const rows = PATIENTS.slice(0,3).map(p => `<tr>
+    <td>${p.id}</td><td>${p.name}</td><td>${p.ward}</td>
+    <td><span class="badge badge-${p.status}">${p.status}</span></td>
+    <td><div class="vitals-row">
+      <span class="vital-chip">BP <strong>120/80</strong></span>
+      <span class="vital-chip">Temp <strong>98.6°F</strong></span>
+      <span class="vital-chip">HR <strong>72bpm</strong></span>
+    </div></td>
+  </tr>`).join('');
+  return `<div class="page-header"><h2>Assigned Patients</h2><p>Ward B — your current assignments</p></div>
+    <div class="card">
+      <table><thead><tr><th>ID</th><th>Name</th><th>Ward</th><th>Status</th><th>Last vitals</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+}
+
+function updateVitals() {
+  return `<div class="page-header"><h2>Update Vitals</h2><p>Record patient vitals</p></div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">New vitals entry</span></div>
+      <div class="form-grid">
+        <div class="field"><label>Patient</label><select><option>P001 — Rajesh Kumar</option><option>P002 — Ananya Reddy</option><option>P004 — Sunita Patel</option></select></div>
+        <div class="field"><label>Recorded at</label><input type="datetime-local" /></div>
+        <div class="field"><label>Blood Pressure (mmHg)</label><input type="text" placeholder="120/80" /></div>
+        <div class="field"><label>Temperature (°F)</label><input type="number" placeholder="98.6" /></div>
+        <div class="field"><label>Heart Rate (bpm)</label><input type="number" placeholder="72" /></div>
+        <div class="field"><label>SpO₂ (%)</label><input type="number" placeholder="98" /></div>
+        <div class="field full"><label>Notes</label><input type="text" placeholder="Any observations..." /></div>
+        <div class="full"><button class="btn btn-success">Save vitals</button></div>
+      </div>
+    </div>`;
+}
+
+function registerPatient() {
+  return `<div class="page-header"><h2>Register Patient</h2><p>Add a new patient to the system</p></div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Patient details</span></div>
+      <div class="form-grid">
+        <div class="field"><label>First name</label><input type="text" placeholder="First name" /></div>
+        <div class="field"><label>Last name</label><input type="text" placeholder="Last name" /></div>
+        <div class="field"><label>Date of birth</label><input type="date" /></div>
+        <div class="field"><label>Gender</label><select><option>Male</option><option>Female</option><option>Other</option></select></div>
+        <div class="field"><label>Phone number</label><input type="tel" placeholder="+91 98765 43210" /></div>
+        <div class="field"><label>Blood group</label><select><option>A+</option><option>B+</option><option>O+</option><option>AB+</option><option>A-</option><option>B-</option></select></div>
+        <div class="field full"><label>Address</label><input type="text" placeholder="Full address" /></div>
+        <div class="field"><label>Assign doctor</label><select><option>Dr. Priya Sharma</option><option>Dr. Arjun Nair</option><option>Dr. Kiran Rao</option></select></div>
+        <div class="field"><label>Ward</label><select><option>General</option><option>Cardiology</option><option>ICU</option><option>Ortho</option><option>Maternity</option></select></div>
+        <div class="full"><button class="btn btn-primary">Register patient</button></div>
+      </div>
+    </div>`;
+}
+
+function appointments() {
+  const appts = [
+    { id:'A001', patient:'New walk-in', doctor:'Dr. Priya Sharma', time:'10:00 AM', type:'Consultation', status:'confirmed' },
+    { id:'A002', patient:'Rajesh Kumar', doctor:'Dr. Arjun Nair', time:'11:30 AM', type:'Follow-up', status:'confirmed' },
+    { id:'A003', patient:'Sunita Patel', doctor:'Dr. Kiran Rao', time:'02:00 PM', type:'Review', status:'admitted' },
+  ];
+  const rows = appts.map(a => `<tr><td>${a.id}</td><td>${a.patient}</td><td>${a.doctor}</td><td>${a.time}</td><td>${a.type}</td><td><span class="badge badge-${a.status}">${a.status}</span></td></tr>`).join('');
+  return `<div class="page-header"><h2>Appointments</h2><p>Today's schedule — April 20, 2026</p></div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Today's appointments</span><button class="btn btn-primary">+ Book appointment</button></div>
+      <table><thead><tr><th>ID</th><th>Patient</th><th>Doctor</th><th>Time</th><th>Type</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+}
+
+window.onload = () => {
+  const saved = localStorage.getItem('demoUser');
+  if (saved) { currentUser = JSON.parse(saved); launchApp(); }
+};
+</script>
+</body>
+</html>
