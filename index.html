@@ -189,14 +189,8 @@
     <p class="auth-sub">Sign in to continue</p>
     <div class="form-group"><label>Email</label><input type="email" id="login-email" value="admin@cityhospital.com" /></div>
     <div class="form-group"><label>Password</label><input type="password" id="login-password" value="password" /></div>
-    <div class="form-group">
-      <label>Role (demo)</label>
-      <select id="login-role">
-        <option value="SuperAdmin">Super Admin</option>
-        <option value="Doctor">Doctor</option>
-        <option value="Nurse">Nurse</option>
-        <option value="Receptionist">Receptionist</option>
-      </select>
+    <div class="demo-hint" style="margin-bottom:16px">
+      Use your hospital credentials to sign in
     </div>
     <button class="btn-login" onclick="doLogin()">Sign in</button>
     <div class="error-msg" id="login-error"></div>
@@ -231,7 +225,7 @@
 </div>
 
 <script>
-const API_BASE = 'https://your-backend.onrender.com/api';
+const API_BASE = 'https://multitenant-auth-system.onrender.com/api';
 
 let currentUser = null;
 
@@ -320,11 +314,27 @@ async function doLogin() {
   } catch(e) { err.textContent = 'Cannot connect to server.'; return; }
   */
 
-  // Demo mode
-  const names = { SuperAdmin:'Admin User', Doctor:'Dr. Priya Sharma', Nurse:'Nurse Kavitha', Receptionist:'Ravi Kumar' };
-  currentUser = { name: names[role], email, role, tenantId: 'branch-a' };
-  localStorage.setItem('demoUser', JSON.stringify(currentUser));
-  launchApp();
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (!res.ok) { err.textContent = 'Invalid credentials.'; return; }
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
+    const payload = parseJwt(data.token);
+    currentUser = {
+      name: email.split('@')[0],
+      email,
+      role: payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload.Role || payload.role,
+      tenantId: payload.TenantId
+    };
+    localStorage.setItem('demoUser', JSON.stringify(currentUser));
+    launchApp();
+  } catch(e) {
+    err.textContent = 'Cannot connect to server. Try again.'; return;
+  }
 }
 
 function parseJwt(token) {
